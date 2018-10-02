@@ -8,6 +8,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
+import cn.skill6.plugin.vautoadd.util.OsPlatform;
+
 /**
  * 版本自动增加插件
  *
@@ -51,22 +53,42 @@ public class VersionAutoAddMojo extends AbstractMojo {
             .append(versionSuffix)
             .toString();
 
-    // 3、调用cmd执行mvn更新版本命令
+    // 3、调用cmd或者sh执行mvn更新版本命令
     Runtime runtime = Runtime.getRuntime();
+
+    // 3.1 windows平台
+    if (OsPlatform.getCurrentOs() == OsPlatform.WINDOWS) {
+      String execCommand =
+          new StringBuilder()
+              .append("cmd /k cd ")
+              .append(projectDirectory)
+              .append(" && mvn versions:set -DnewVersion=")
+              .append(newVersion)
+              .toString();
+
+      try {
+        runtime.exec(execCommand);
+      } catch (IOException e) {
+        e.printStackTrace();
+
+        throw new MojoExecutionException("execution exception");
+      }
+
+      return;
+    }
+
+    // 3.2 linux平台
     String execCommand =
         new StringBuilder()
-            .append("cmd /k cd ")
+            .append("cd ")
             .append(projectDirectory)
-            .append(" && mvn versions:set -DnewVersion=")
+            .append("; mvn versions:set -DnewVersion=")
             .append(newVersion)
             .toString();
-
     try {
-      runtime.exec(execCommand);
+      runtime.exec(new String[] {"/bin/sh", "-c", execCommand});
     } catch (IOException e) {
       e.printStackTrace();
-
-      throw new MojoExecutionException("execution exception");
     }
   }
 }
