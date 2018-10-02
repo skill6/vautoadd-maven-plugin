@@ -1,6 +1,8 @@
 package cn.skill6.plugin.vautoadd;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -37,7 +39,7 @@ public class VersionAutoAddMojo extends AbstractMojo {
     int endIndex = currentVersion.indexOf("-");
 
     if (beginIndex == -1 || endIndex == -1 || endIndex - beginIndex < 1) {
-      throw new MojoFailureException("currentVersion fornat is error");
+      throw new MojoFailureException("currentVersion format is error");
     }
 
     String versionPefix = currentVersion.substring(0, beginIndex + 1);
@@ -86,7 +88,13 @@ public class VersionAutoAddMojo extends AbstractMojo {
             .append(newVersion)
             .toString();
     try {
-      runtime.exec(new String[] {"/bin/sh", "-c", execCommand});
+      Process process = runtime.exec(new String[] {"/bin/sh", "-c", execCommand});
+
+      LineNumberReader br = new LineNumberReader(new InputStreamReader(process.getInputStream()));
+      String line;
+      while ((line = br.readLine()) != null) {
+        System.out.println(line);
+      }
     } catch (IOException e) {
       e.printStackTrace();
     }
