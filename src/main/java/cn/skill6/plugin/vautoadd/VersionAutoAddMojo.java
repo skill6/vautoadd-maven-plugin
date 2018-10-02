@@ -30,6 +30,7 @@ public class VersionAutoAddMojo extends AbstractMojo {
       throw new MojoFailureException("currentVersion is null");
     }
 
+    // 1、获取当前小版本
     int beginIndex = currentVersion.lastIndexOf(".");
     int endIndex = currentVersion.indexOf("-");
 
@@ -39,7 +40,7 @@ public class VersionAutoAddMojo extends AbstractMojo {
 
     String versionPefix = currentVersion.substring(0, beginIndex + 1);
     int smallVersion = Integer.parseInt(currentVersion.substring(beginIndex + 1, endIndex));
-    // 版本自增
+    // 2、版本自增
     smallVersion++;
     String versionSuffix = currentVersion.substring(endIndex);
 
@@ -50,7 +51,7 @@ public class VersionAutoAddMojo extends AbstractMojo {
             .append(versionSuffix)
             .toString();
 
-    // 调用cmd执行mvn更新版本命令
+    // 3、调用cmd执行mvn更新版本命令
     Runtime runtime = Runtime.getRuntime();
     String execCommand =
         new StringBuilder()
