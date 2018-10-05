@@ -1,6 +1,7 @@
 package cn.skill6.plugin.vautoadd;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 
@@ -16,7 +17,7 @@ import cn.skill6.plugin.vautoadd.util.OsPlatform;
  * 版本自动增加插件
  *
  * @author 何明胜
- * @version 1.0
+ * @version 1.1
  * @since 2018年10月2日 上午12:49:49
  */
 @Mojo(name = "vadd")
@@ -44,6 +45,7 @@ public class VersionAutoAddMojo extends AbstractMojo {
 
     String versionPefix = currentVersion.substring(0, beginIndex + 1);
     int smallVersion = Integer.parseInt(currentVersion.substring(beginIndex + 1, endIndex));
+
     // 2、版本自增
     smallVersion++;
     String versionSuffix = currentVersion.substring(endIndex);
@@ -60,17 +62,18 @@ public class VersionAutoAddMojo extends AbstractMojo {
 
     // 3.1 windows平台
     if (OsPlatform.getCurrentOs() == OsPlatform.WINDOWS) {
-      String execCommand =
+      String command =
           new StringBuilder()
-              .append("cmd /k cd ")
+              .append("cmd /c cd ")
               .append(projectDirectory)
               .append(" && mvn versions:set -DnewVersion=")
               .append(newVersion)
               .toString();
 
       try {
-        runtime.exec(execCommand);
-      } catch (IOException e) {
+        Process process = runtime.exec(command);
+        outputProcess(process);
+      } catch (IOException | InterruptedException e) {
         e.printStackTrace();
 
         throw new MojoExecutionException("execution exception");
@@ -80,23 +83,43 @@ public class VersionAutoAddMojo extends AbstractMojo {
     }
 
     // 3.2 linux平台
-    String execCommand =
+    String command =
         new StringBuilder()
             .append("cd ")
             .append(projectDirectory)
             .append("; mvn versions:set -DnewVersion=")
             .append(newVersion)
             .toString();
-    try {
-      Process process = runtime.exec(new String[] {"/bin/sh", "-c", execCommand});
 
-      LineNumberReader br = new LineNumberReader(new InputStreamReader(process.getInputStream()));
-      String line;
-      while ((line = br.readLine()) != null) {
-        System.out.println(line);
-      }
-    } catch (IOException e) {
+    try {
+      Process process = runtime.exec(new String[] {"/bin/sh", "-c", command});
+      outputProcess(process);
+    } catch (IOException | InterruptedException e) {
       e.printStackTrace();
+
+      throw new MojoExecutionException("execution exception");
     }
+  }
+
+  /**
+   * 输出执行过程
+   *
+   * @param process
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  public void outputProcess(Process process) throws IOException, InterruptedException {
+    InputStream inputStream = process.getInputStream();
+    InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+    LineNumberReader lineNumberReader = new LineNumberReader(inputStreamReader);
+    String line;
+
+    while ((line = lineNumberReader.readLine()) != null) {
+      System.out.println(line);
+    }
+
+    lineNumberReader.close();
+    inputStreamReader.close();
+    inputStream.close();
   }
 }
